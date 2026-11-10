@@ -1,0 +1,29 @@
+# BIP-39 passphrase on the Keypad edition: Passphrase > Edit Phrase (the
+# letter-entry screen, which crashed before bytearray(str) was fixed) > OK
+# with "A" > APPLY. Fingerprint must match embit's for passphrase "A".
+wait 1500
+type 1234
+key y
+wait 2500
+key y
+wait 600
+type 5678
+key y
+wait 6000
+expect Ready To Sign
+pick Passphrase
+wait 800
+key y
+wait 600
+pick Edit Phrase
+wait 800
+expect 4=SwapCase
+key y
+wait 600
+pick APPLY
+wait 3000
+expect CE6B9D00
+key y
+wait 2000
+expect Ready To Sign
+quit

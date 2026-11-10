@@ -1,0 +1,26 @@
+# Mk4/Mk5 UI: log in with 1234-5678, import "abandon x11 about" via the
+# letter menus, finish first-time setup
+wait 1500
+expect Enter PIN Prefix
+type 1234
+key y
+wait 2500
+expect Recognize these?
+key y
+wait 600
+type 5678
+key y
+wait 5000
+expect New Seed Words
+pick Import Existing
+wait 600
+pick 12 Words
+wait 600
+words abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about
+wait 5000
+expect Welcome!
+key y
+wait 2000
+expect Ready To Sign
+shot main_menu
+quit

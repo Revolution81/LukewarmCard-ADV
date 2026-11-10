@@ -1,0 +1,23 @@
+# Mk4/Mk5 UI: File Management -> Format SD Card. In this port it must only
+# empty SD:/MK5 and leave the rest of the card alone.
+wait 1500
+type 1234
+key y
+wait 2500
+key y
+wait 600
+type 5678
+key y
+wait 6000
+expect Ready To Sign
+pick Advanced/Tools
+wait 600
+pick File Management
+wait 800
+pick Format SD Card
+wait 1000
+expect MK5 folder
+key y
+wait 4000
+screen
+quit

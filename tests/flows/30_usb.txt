@@ -1,0 +1,35 @@
+# Q UI: log in, turn USB on (Settings > Hardware On/Off > USB Port), then
+# act as the person holding the device while tests/test_usb.sh drives it
+# with HWI: approve the signing request, then look at the address shown.
+wait 1500
+type 1234
+key ENTER
+wait 2500
+type 5678
+key ENTER
+wait 6000
+pick Settings
+wait 600
+pick Hardware On/Off
+wait 600
+pick USB Port
+wait 600
+pick Default On
+wait 1500
+key ESC
+wait 300
+key ESC
+wait 300
+key ESC
+wait 600
+waitfor 90 OK TO SEND?
+shot usb_sign_review
+key ENTER
+waitfor 30 PSBT Signed
+shot usb_sign_done
+waitfor 60 tb1q
+shot usb_show_address
+key ENTER
+wait 2000
+mem after_usb
+quit

@@ -1,0 +1,5 @@
+build/
+dist/
+cmodules/libngu-src/libs
+__pycache__/
+*.pyc

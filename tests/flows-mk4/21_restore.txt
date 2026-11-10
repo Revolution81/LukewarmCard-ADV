@@ -1,0 +1,26 @@
+# Mk4/Mk5 UI, freshly installed device with only a PIN set: restore the
+# backup from SD:/MK5 with the 12-word password
+wait 1500
+type 1234
+key y
+wait 2500
+key y
+wait 600
+type 5678
+key y
+wait 5000
+expect New Seed Words
+pick Import Existing
+wait 600
+pick Restore Backup
+wait 2000
+expect backup.7z
+key y
+wait 2000
+bkwords
+wait 8000
+expect 73C5DA0A
+key y
+wait 6000
+expect Success!
+quit

@@ -1,0 +1,19 @@
+# Mk4/Mk5 UI: Settings > Login Settings > Test Login Now must restart
+# (straight to PIN entry on the device), not stop at "Logged out"
+wait 1500
+type 1234
+key y
+wait 2500
+key y
+wait 600
+type 5678
+key y
+wait 6000
+expect Ready To Sign
+pick Settings
+wait 600
+pick Login Settings
+wait 600
+pick Test Login Now
+wait 3000
+quit

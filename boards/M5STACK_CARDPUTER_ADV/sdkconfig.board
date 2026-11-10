@@ -1,0 +1,18 @@
+# 8MB flash, custom partition table
+CONFIG_ESPTOOLPY_FLASHSIZE_4MB=
+CONFIG_ESPTOOLPY_FLASHSIZE_8MB=y
+CONFIG_ESPTOOLPY_FLASHSIZE="8MB"
+CONFIG_PARTITION_TABLE_CUSTOM=y
+CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="boards/M5STACK_CARDPUTER_ADV/partitions.csv"
+
+# no PSRAM on the Cardputer ADV
+CONFIG_SPIRAM=n
+
+# no radios
+CONFIG_BT_ENABLED=n
+CONFIG_ESP_WIFI_ENABLED=n
+
+# Never touch security eFuses from firmware: the device must always stay
+# reflashable over USB download mode.
+CONFIG_SECURE_BOOT=n
+CONFIG_SECURE_FLASH_ENC_ENABLED=n

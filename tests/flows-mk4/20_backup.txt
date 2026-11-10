@@ -1,0 +1,29 @@
+# Mk4/Mk5 UI: Backup System -> encrypted backup file in SD:/MK5
+# (the 12-word password is saved to the test work folder for 21_restore)
+wait 1500
+type 1234
+key y
+wait 2500
+key y
+wait 600
+type 5678
+key y
+wait 6000
+expect Ready To Sign
+pick Advanced/Tools
+wait 600
+pick Backup
+wait 800
+pick Backup System
+wait 3000
+learnwords
+key y
+wait 1500
+quiz
+wait 3000
+expect Would you like to
+key y
+wait 4000
+expect Backup file
+screen
+quit

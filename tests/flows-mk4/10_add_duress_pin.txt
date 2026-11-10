@@ -1,0 +1,42 @@
+# Mk4/Mk5 UI: add trick PIN 9999-1111 -> Duress Wallet (BIP-85 Wallet #1)
+wait 1500
+type 1234
+key y
+wait 2500
+key y
+wait 600
+type 5678
+key y
+wait 5000
+pick Settings
+wait 600
+pick Login Settings
+wait 600
+pick Trick PINs
+wait 1000
+pick Add New Trick
+wait 1000
+expect New Trick PIN
+type 9999
+key y
+wait 2500
+key y
+wait 600
+type 1111
+key y
+wait 3000
+expect [9999-1111]
+pick Duress Wallet
+wait 1000
+key y
+wait 1000
+pick BIP-85 Wallet #1
+wait 3000
+key y
+wait 4000
+expect PIN 9999-1111
+screen
+key y
+wait 3000
+expect Trick PINs:
+quit

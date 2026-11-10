@@ -1,0 +1,32 @@
+# Mk4/Mk5 UI: Advanced/Tools > Entropy Sources, and Upgrade Firmware >
+# From MicroSD (explains instead of trying a .dfu)
+wait 1500
+type 1234
+key y
+wait 2500
+key y
+wait 600
+type 5678
+key y
+wait 6000
+expect Ready To Sign
+pick Advanced/Tools
+wait 600
+pick Entropy Sources
+wait 2000
+shot entropy
+screen
+expect Entropy
+key x
+wait 600
+pick Upgrade Firmware
+wait 600
+pick From MicroSD
+wait 1500
+shot upgrade
+screen
+expect Upgrades
+key x
+wait 600
+expect Show Version
+quit

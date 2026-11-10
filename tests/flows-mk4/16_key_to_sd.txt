@@ -1,0 +1,24 @@
+# Advanced/Tools > Key Storage > 2: move the key to the SD card
+wait 1500
+type 1234
+key y
+wait 2500
+key y
+wait 600
+type 5678
+key y
+wait 6000
+expect Ready To Sign
+pick Advanced/Tools
+wait 600
+pick Key Storage
+wait 800
+expect Key Storage
+key 2
+wait 600
+key y
+wait 2000
+expect Moved
+key y
+wait 500
+quit

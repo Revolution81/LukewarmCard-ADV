@@ -1,0 +1,28 @@
+# Q UI: Advanced/Tools > Entropy Sources, and Upgrade Firmware > From MicroSD
+wait 1500
+type 1234
+key ENTER
+wait 2500
+type 5678
+key ENTER
+wait 6000
+pick Advanced/Tools
+wait 600
+pick Entropy Sources
+wait 2000
+shot entropy
+screen
+expect Chip RNG
+key ESC
+wait 600
+pick Upgrade Firmware
+wait 600
+pick From MicroSD
+wait 1500
+shot upgrade
+screen
+expect Firmware files
+key ESC
+wait 600
+expect Show Version
+quit

@@ -1,0 +1,25 @@
+# Advanced/Tools > Key Storage > 1: move the key from the SD card to internal flash
+wait 1500
+type 1234
+key y
+wait 2500
+key y
+wait 600
+type 5678
+key y
+wait 6000
+expect Ready To Sign
+pick Advanced/Tools
+wait 600
+pick Key Storage
+wait 800
+shot key_storage
+expect Key Storage
+key 1
+wait 600
+key y
+wait 2000
+expect Moved
+key y
+wait 500
+quit

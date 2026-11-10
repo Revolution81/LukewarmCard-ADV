@@ -1,0 +1,48 @@
+# Virtual Disk: Settings > Hardware On/Off > Virtual Disk > Enable & Auto,
+# then the "computer" drops a PSBT on the drive (vdput), the Cardputer offers
+# it, approve, signed file appears on the drive.
+wait 1500
+type 1234
+key y
+wait 2500
+key y
+wait 600
+type 5678
+key y
+wait 6000
+expect Ready To Sign
+pick Settings
+wait 600
+pick Hardware On/Off
+wait 600
+pick Virtual Disk
+wait 800
+screen
+key y
+wait 800
+screen
+pick Enable & Auto
+wait 8000
+screen
+key x
+wait 500
+key x
+wait 500
+key x
+wait 800
+expect Ready To Sign
+vdls
+vdput test.psbt test.psbt
+wait 4000
+screen
+expect OK TO SEND?
+shot vdisk_review
+key y
+wait 5000
+screen
+expect PSBT Signed
+key x
+wait 1500
+vdls
+vdget test-signed.psbt vd-signed.psbt
+quit

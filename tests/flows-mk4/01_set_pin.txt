@@ -1,0 +1,39 @@
+# Mk4/Mk5 UI, fresh device: accept terms, set PIN 1234-5678
+wait 1500
+expect Terms of Sale and
+key y
+wait 400
+key y
+wait 400
+expect Choose PIN Code
+pick Choose PIN Code
+wait 400
+key y
+wait 400
+expect WARNING
+key 6
+wait 600
+expect Enter PIN Prefix
+type 1234
+key y
+wait 2000
+expect Write these down:
+key y
+wait 600
+expect Enter rest of PIN
+type 5678
+key y
+wait 1500
+expect CONFIRM PIN VALUE
+type 1234
+key y
+wait 2000
+expect Recognize these?
+key y
+wait 600
+type 5678
+key y
+wait 5000
+mem after_pin
+expect New Seed Words
+quit

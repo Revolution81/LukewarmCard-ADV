@@ -1,0 +1,27 @@
+# Power on without the key card (run_flows creates card-out first), put it
+# in, log in, take it out again: logged-in use carries on without it.
+wait 2000
+shot key_card
+screen
+expect Key Card
+cardin
+key y
+wait 1500
+type 1234
+key y
+wait 2500
+key y
+wait 600
+type 5678
+key y
+wait 6000
+expect Ready To Sign
+cardout
+pick Advanced/Tools
+wait 600
+pick View Identity
+wait 2000
+screen
+expect Fingerprint
+cardin
+quit

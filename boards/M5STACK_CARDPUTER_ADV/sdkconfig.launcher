@@ -1,0 +1,2 @@
+# M5Launcher builds (LAYOUT=launcher tools/build_device.sh)
+CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="boards/M5STACK_CARDPUTER_ADV/partitions_launcher.csv"

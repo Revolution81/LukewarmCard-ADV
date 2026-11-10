@@ -1,0 +1,11 @@
+# Cardputer ADV COLDCARD port, 8MB flash: M5Launcher layout.
+# Launcher installs the app into its own slot and copies/creates data
+# partitions by label, so everything the port stores lives in one standard
+# 'vfs' partition (fixed internal layout, see hal/device/cp_flashlayout.py).
+# Launcher creates a new app's vfs at 448K (its minimum), so the layout is
+# sized to exactly 448K.
+# Name,    Type, SubType, Offset,   Size,     Flags
+nvs,       data, nvs,     0x9000,   0x6000,
+phy_init,  data, phy,     0xf000,   0x1000,
+factory,   app,  factory, 0x10000,  0x300000,
+vfs,       data, fat,     0x310000, 0x70000,

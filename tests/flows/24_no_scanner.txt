@@ -1,0 +1,24 @@
+# Q edition: the QR key in a text field (no camera here) explains and returns,
+# instead of freezing in COLDCARD's endless scan-retry loop
+wait 1500
+type 1234
+key ENTER
+wait 2500
+type 5678
+key ENTER
+wait 6000
+pick Passphrase
+wait 800
+key ENTER
+wait 800
+expect BIP-39 Passphrase
+key QR
+wait 800
+expect No Scanner
+key ENTER
+wait 800
+expect BIP-39 Passphrase
+key ESC
+wait 800
+expect Ready To Sign
+quit

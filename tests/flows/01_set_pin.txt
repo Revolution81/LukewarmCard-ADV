@@ -1,0 +1,32 @@
+# fresh device: accept terms, set PIN 1234-5678
+wait 1500
+key ENTER
+wait 400
+key ENTER
+wait 400
+key ENTER
+wait 400
+key ENTER
+wait 400
+key 6
+wait 600
+expect Enter first part of PIN
+type 1234
+key ENTER
+wait 2000
+expect Enter second part of PIN
+screen
+type 5678
+key ENTER
+wait 1500
+expect Confirm PIN value
+type 1234
+key ENTER
+wait 2000
+type 5678
+key ENTER
+wait 5000
+screen
+mem after_pin
+expect New Seed Words
+quit

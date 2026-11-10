@@ -1,0 +1,118 @@
+# Build LukewarmCard ADV images on GitHub's computers.
+#
+#  - By hand: Actions tab > "Build LukewarmCard images" > Run workflow, type the
+#    COLDCARD version (latest-mk5, latest-q, master, a tag or a commit).
+#    The images appear under that run as a downloadable "artifact".
+#  - Automatically: every Monday it looks for a new COLDCARD Mk4/Mk5 release.
+#    If there is one, it builds it, runs the tests and publishes the images
+#    as a GitHub Release named after the COLDCARD tag.
+name: Build LukewarmCard images
+
+on:
+  workflow_dispatch:
+    inputs:
+      coldcard_ref:
+        description: "COLDCARD version: latest-mk5, latest-q, master, a tag or a commit"
+        default: latest-mk5
+      editions:
+        description: "Which editions to build"
+        type: choice
+        options: [keypad, keypad + qwerty (experimental)]
+        default: keypad
+      run_tests:
+        description: "Run the tests first (recommended)"
+        type: boolean
+        default: true
+      publish:
+        description: "Also publish as a GitHub Release"
+        type: boolean
+        default: false
+  schedule:
+    - cron: "17 6 * * 1"
+
+permissions:
+  contents: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    outputs:
+      ref: ${{ steps.pick.outputs.ref }}
+      build: ${{ steps.pick.outputs.build }}
+      publish: ${{ steps.pick.outputs.publish }}
+    steps:
+      - id: pick
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          latest() {
+            git ls-remote --tags https://github.com/Coldcard/firmware.git \
+              | awk '{print $2}' | sed 's#refs/tags/##' | grep -v '\^{}' \
+              | grep -E -- "$1" | sort | tail -1
+          }
+          REF="${{ inputs.coldcard_ref }}"
+          PUBLISH="${{ inputs.publish }}"
+          if [ "${{ github.event_name }}" = schedule ]; then
+            REF=latest-mk5; PUBLISH=true
+          fi
+          # turn latest-* into the actual tag, so the release is named after it
+          case "$REF" in
+            latest-mk5|latest-mk4) REF=$(latest '^20.*-v[0-9]+\.[0-9]+\.[0-9]+$') ;;
+            latest-q)              REF=$(latest '^20.*-v[0-9]+\.[0-9]+\.[0-9]+Q$') ;;
+          esac
+          BUILD=true
+          if [ "${{ github.event_name }}" = schedule ] \
+             && gh release view "$REF" -R "${{ github.repository }}" >/dev/null 2>&1; then
+            echo "Already built $REF"; BUILD=false
+          fi
+          echo "ref=$REF" >> "$GITHUB_OUTPUT"
+          echo "build=$BUILD" >> "$GITHUB_OUTPUT"
+          echo "publish=$PUBLISH" >> "$GITHUB_OUTPUT"
+          echo "COLDCARD ref: $REF, build: $BUILD, publish: $PUBLISH"
+
+  build:
+    needs: check
+    if: needs.check.outputs.build == 'true'
+    runs-on: ubuntu-latest
+    container: espressif/idf:v5.5.4
+    steps:
+      - uses: actions/checkout@v4
+      - name: Tools for the desktop tests
+        run: |
+          apt-get update && apt-get install -y --no-install-recommends build-essential libffi-dev pkg-config
+          . "$IDF_PATH/export.sh" >/dev/null
+          pip install embit pillow ckcc-protocol
+          pip install --ignore-requires-python hwi==3.2.0
+          git config --global --add safe.directory '*'
+      - name: Build
+        shell: bash
+        run: |
+          . "$IDF_PATH/export.sh" >/dev/null
+          [ "${{ inputs.run_tests }}" = false ] && export SKIP_TESTS=1
+          export VARIANTS=mk4
+          case "${{ inputs.editions }}" in *qwerty*) export VARIANTS="mk4 q1" ;; esac
+          SRC=$RUNNER_TEMP/src tools/build_release.sh "${{ needs.check.outputs.ref }}"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lukewarmcard-adv-${{ github.run_number }}
+          path: |
+            dist/
+            build/release-logs/
+          if-no-files-found: warn
+
+  release:
+    needs: [check, build]
+    if: needs.check.outputs.publish == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: lukewarmcard-adv-${{ github.run_number }}
+      - env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          D=$(ls -d dist/*/ | head -1)
+          gh release create "${{ needs.check.outputs.ref }}" -R "${{ github.repository }}" \
+            --title "LukewarmCard ADV (COLDCARD ${{ needs.check.outputs.ref }})" \
+            --notes-file "$D/BUILDINFO.txt" "$D"/*.bin "$D/SHA256SUMS.txt" "$D/NOTICE.md" "$D/LICENSE"

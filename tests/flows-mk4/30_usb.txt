@@ -1,0 +1,39 @@
+# Mk4/Mk5 UI: log in, turn USB on (Settings > Hardware On/Off > USB Port),
+# then act as the person holding the device while tests/test_usb.sh drives
+# it from the PC with HWI: approve the signing request, then look at the
+# address it asks to show.
+wait 1500
+type 1234
+key y
+wait 2500
+key y
+wait 600
+type 5678
+key y
+wait 6000
+expect Ready To Sign
+pick Settings
+wait 600
+pick Hardware On/Off
+wait 600
+pick USB Port
+wait 600
+pick Default On
+wait 1500
+key x
+wait 300
+key x
+wait 300
+key x
+wait 600
+waitfor 90 OK TO SEND?
+shot usb_sign_review
+key y
+waitfor 30 PSBT Signed
+shot usb_sign_done
+waitfor 60 tb1q
+shot usb_show_address
+key y
+wait 2000
+mem after_usb
+quit

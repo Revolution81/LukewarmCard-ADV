@@ -1,0 +1,17 @@
+# Mk4/Mk5 UI: log in with the main PIN, read the wallet fingerprint
+wait 1500
+type 1234
+key y
+wait 2500
+key y
+wait 600
+type 5678
+key y
+wait 6000
+expect Ready To Sign
+pick Advanced/Tools
+wait 600
+pick View Identity
+wait 2000
+screen
+quit

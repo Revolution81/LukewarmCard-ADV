@@ -1,0 +1,21 @@
+# Mk4/Mk5 UI: log in, Ready To Sign (single PSBT on card), approve
+wait 1500
+type 1234
+key y
+wait 2500
+key y
+wait 600
+type 5678
+key y
+wait 5000
+expect Ready To Sign
+pick Ready To Sign
+wait 3000
+expect OK TO SEND?
+shot sign_review
+key y
+wait 4000
+expect PSBT Signed
+shot sign_done
+mem after_sign
+quit

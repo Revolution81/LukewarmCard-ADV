@@ -1,0 +1,44 @@
+# Mk4/Mk5 self-test on the Cardputer's parts: screen, keypad, USB light (RGB
+# LED, white), microphone, gyro (both simulated on desktop), SD card
+wait 1500
+type 1234
+key y
+wait 2500
+key y
+wait 600
+type 5678
+key y
+wait 6000
+expect Ready To Sign
+pick Advanced/Tools
+wait 600
+pick Danger Zone
+wait 800
+screen
+pick Perform Selftest
+wait 1000
+expect All on?
+key y
+wait 500
+expect All off?
+key y
+wait 500
+expect Numpad Test
+type 123456789
+key x
+key 0
+key y
+wait 800
+shot usb_light
+expect USB light is on?
+key y
+wait 300
+shot mic
+screen
+wait 4000
+shot selftest_done
+screen
+expect PASS
+key y
+wait 500
+quit

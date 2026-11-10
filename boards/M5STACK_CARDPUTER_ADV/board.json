@@ -1,0 +1,11 @@
+{
+    "deploy": ["../deploy_s3.md"],
+    "docs": "",
+    "features": ["microSD", "Keyboard", "Display"],
+    "images": [],
+    "mcu": "esp32s3",
+    "product": "Cardputer ADV (COLDCARD port)",
+    "thumbnail": "",
+    "url": "https://docs.m5stack.com/en/core/Cardputer-Adv",
+    "vendor": "M5Stack"
+}
