@@ -7,6 +7,9 @@ LukewarmCard ADV runs Coinkite's open-source
 unmodified, on a ~$30 M5Stack Cardputer ADV (ESP32-S3, 240x135 screen,
 56-key keyboard, microSD). It's not as cold as the real thing: hence the name.
 
+This is the **Keypad edition**: it runs the COLDCARD **Mk4/Mk5** firmware
+(5.6.3), with the Cardputer's keys standing in for the Mk5's number pad.
+
 > **Unofficial.** LukewarmCard is an independent hobby project. It is **not
 > affiliated with, endorsed by, or supported by Coinkite Inc.** COLDCARD is a
 > trademark of Coinkite; the name is used here only to say which firmware
@@ -30,19 +33,18 @@ Sources (microphone and gyro noise mixed into new seeds), and Key Storage
 (keep your encrypted key on the SD card or in internal flash). Screens from
 the desktop test build; the transaction above is on testnet.*
 
-### Editions
+### Install
 
-| Edition | Runs | Feels like |
-|---|---|---|
-| **LukewarmCard ADV, Keypad edition** (released) | COLDCARD Mk4/Mk5 firmware (5.6.3) | number keys, OK/X, 128x64 black-and-white screen |
-| **LukewarmCard ADV, QWERTY edition** (coming later, experimental) | COLDCARD Q firmware (1.5.3Q) | full keyboard, colour screen |
+Download from **Releases**: `lukewarmcard-adv-keypad-<version>-launcher.bin`
+(install with M5Launcher) or `...-full-flash.bin` (write at 0x0 with esptool
+/ a web flasher). Check it against `SHA256SUMS.txt`.
 
-Files: `lukewarmcard-adv-keypad-<version>-launcher.bin` (install with
-M5Launcher) or `...-full-flash.bin` (write at 0x0 with esptool / a web
-flasher). The QWERTY edition isn't released yet: it builds and passes the
-desktop tests but hasn't been tried on a Cardputer. You can build it yourself
-(`VARIANTS="mk4 q1" tools/build_release.sh`). Versions for the original
-Cardputer and the Cardputer Zero may follow.
+| COLDCARD key | Cardputer |
+|---|---|
+| 0-9 | `0`-`9` |
+| OK | `Enter` |
+| X | `esc` (`` ` ``) or `del` (Bksp) |
+| up, down, left, right (5, 8, 7, 9) | `;` `.` `,` `/` (with or without `Fn`) |
 
 ### Good to know
 
@@ -56,9 +58,8 @@ Cardputer and the Cardputer Zero may follow.
   share, **not to sell**. LukewarmCard is released on the same terms. Never
   charge for it, for support, or for devices with it installed. See
   [NOTICE.md](NOTICE.md) for every component and licence.
-- Originally named "COLDCARD firmware on the M5Stack Cardputer ADV"; the
-  technical sections below still call the editions "Mk4/Mk5 variant" (keypad)
-  and "Q variant" (QWERTY), after the COLDCARD code paths they run.
+- In the build scripts and source the Keypad edition is called `mk4`, after
+  the COLDCARD code path it runs (the Mk4 and Mk5 share one firmware line).
 
 COLDCARD's wallet logic (about 42,000 lines of MicroPython: PSBT signing,
 trick PINs, BIP-85, Seed XOR, multisig, secure notes, paper wallets, Codex32,
@@ -69,16 +70,11 @@ small, exact-match patches. Everything Cardputer-specific is in `hal/`.
 
 | | |
 |---|---|
-| Real hardware (Keypad edition, M5Launcher image) | Boots; creates seed and wallet; Sparrow finds it over USB and **signs and sends transactions**; paper wallets and backups saved to SD:/MK5; backup / reinstall / restore; logout; self-test (LED, mic, gyro, SD); entropy sources (mic, gyro) in use. Key stored on the SD card. Memory measured: lowest 69 KB free after signing. Passphrase entry. Not yet confirmed on hardware: Virtual Disk with a computer, QWERTY edition. |
+| Real hardware (M5Launcher image) | Boots; creates seed and wallet; Sparrow finds it over USB and **signs and sends transactions**; paper wallets and backups saved to SD:/MK5; backup / reinstall / restore; logout; self-test (LED, mic, gyro, SD); entropy sources (mic, gyro) in use. Key stored on the SD card. Passphrase entry. Memory measured: lowest 69 KB free after signing. Not yet confirmed on hardware: Virtual Disk with a computer. |
 | Desktop test build | Full firmware runs headless on Linux with the same code and C modules |
-| Verified on desktop | Terms → set PIN → import seed → **sign PSBT from microSD**, signature checked independently with `embit` |
-| Verified on desktop | Trick PINs: BIP-85 duress PIN opens the correct wallet (fingerprint matches an independent derivation); brick options can be shown or hidden |
+| Verified on desktop | Terms → set PIN → import seed (Mk4 letter menus) → **sign PSBT from microSD**, signature checked independently with `embit` |
+| Verified on desktop | Trick PINs: BIP-85 duress PIN opens the correct wallet (fingerprint F00F1FC0 matches embit's BIP-85 index 2001); brick options can be shown or hidden |
 | Verified on desktop | Emulated secure element: 29 unit tests (persistence, encryption at rest, tamper detection, brick/wipe/Last Chance paths leave a usable blank device) |
-| Mk4/Mk5 variant | Same checks pass on the desktop build: PIN, seed import via the Mk4 letter menus, PSBT signed and verified with `embit`, duress PIN (fingerprint F00F1FC0 matches embit's BIP-85 index 2001), 29 SE tests |
-| Memory | Sign flow passes with a 288 KB heap on the 64-bit desktop build (both variants). Expected ~150-200 KB on the 32-bit ESP32. Should fit, needs confirming on hardware. |
-
-![main menu](docs/screens/main_menu.png)
-![sign review](docs/screens/sign_review.png)
 
 ## Security: what you do and don't get
 
@@ -105,21 +101,13 @@ small, exact-match patches. Everything Cardputer-specific is in `hal/`.
 - Trick-PIN slots are stored encrypted under their own PIN. "N wrong PINs"
   policies are stored in the clear, since there's no PIN to encrypt them with.
 
-## Mk4/Mk5 variant
+## Mk4/Mk5 firmware on the Cardputer
 
-Builds the firmware Coinkite ships for the Mk4 and Mk5 (they share one
-firmware line) from the same COLDCARD commit as the Q variant. COLDCARD's own
-Mk4 modules run unmodified: `display.py` (OLED screen code), `ux_mk4.py`,
-`menu.py` with the 5/8 navigation, the Mk4 PIN and seed-word entry. The module
-set is exactly Coinkite's: everything in COLDCARD's `manifest_q1.py` is left
-out, as in a real Mk4/Mk5 build. One extra one-line patch stops `display.py`
-opening the STM32's SPI bus.
-
-```bash
-VARIANT=mk4 tools/build_host_fw.sh     # -> build/host-mk4/cc-mpy
-VARIANT=mk4 tests/run_flows.sh 320k    # PIN, seed, sign, duress PIN, fingerprints
-VARIANT=mk4 tools/build_device.sh      # -> build/device-mk4/firmware.bin
-```
+The firmware Coinkite ships for the Mk4 and Mk5 (they share one firmware
+line). COLDCARD's own Mk4 modules run unmodified: `display.py` (OLED screen
+code), `ux_mk4.py`, `menu.py` with the 5/8 navigation, the Mk4 PIN and
+seed-word entry. The module set is exactly Coinkite's Mk4/Mk5 set. One extra
+one-line patch stops `display.py` opening the STM32's SPI bus.
 
 What's Cardputer-specific (in `hal/mk4/`):
 
@@ -127,8 +115,7 @@ What's Cardputer-specific (in `hal/mk4/`):
   128x64 1-bit buffer as on a real OLED; `show()` sends it to the LCD, scaled in
   C (`lcd.send_mono`). `features.MK4_SCREEN = 'fit'` (240x128) or `'actual'` (1:1).
 - `mempad.py`: stands in for the membrane keypad. Cardputer keys become the
-  Mk4's 12 keys: `0-9`, **Enter** or `y` = OK, **Bksp**, **Alt**, `x` or
-  **Fn+`** = X, and the arrow keys `; . , /` = `5 8 7 9` (up, down, left, right).
+  Mk4's 12 keys (see the key table above); all other keys are ignored.
 - `version.py`: reports `hw_label='mk5'`, `mk_num=5` (or Mk4 with
   `features.MK4_MODEL = 4`). Mk4 and Mk5 run identical firmware.
 
@@ -137,7 +124,7 @@ What's Cardputer-specific (in `hal/mk4/`):
 
 ## M5Launcher builds
 
-`LAYOUT=launcher tools/build_device.sh` (with `VARIANT=mk4` for Mk4/Mk5) makes
+`LAYOUT=launcher tools/build_device.sh` makes
 an image that [M5Launcher](https://github.com/bmorcelli/Launcher) can install
 from the SD card. Launcher installs the app into its own slot and carries over
 only standard data partitions, by label, possibly resized. So these images
@@ -179,11 +166,11 @@ session, PSBT upload, on-screen approval).
   so nothing showed up on USB at all before this.
 - Desktop build: `hal/host/cp_usb.py` speaks the same packets over a Unix
   socket, like COLDCARD's simulator, so HWI and `ckcc` can drive it.
-- `tests/test_usb.sh` (`VARIANT=mk4` for Mk5): the device USB code against a
+- `tests/test_usb.sh`: the device USB code against a
   fake USB controller (descriptors, packets, waiting), then HWI finds the
   firmware, reads keys, signs a PSBT approved on screen and shows an address,
   all checked against embit.
-- Not ported: HSM mode, Virtual Disk, keyboard emulation.
+- Not ported: HSM mode, keyboard emulation. (Virtual Disk: see below.)
 - COLDCARD calls `sha256().digest()` twice on the upload checksum; MicroPython
   1.29 forbids that ("hash is final"). `tools/assemble.py` points COLDCARD's
   `from uhashlib import sha256` at `cp_hashlib` (libngu sha256 with
@@ -217,7 +204,7 @@ mixing, and that missing/flat/stuck sensors are reported and skipped.
 
 The soft secure element's record (encrypted seed, PIN check values, trick
 PINs, wrong-PIN counter) can live in internal flash or on the microSD card,
-in a hidden folder: `MK5/.keystore/` (Mk5 firmware) or `.keystore/` (Q).
+in a hidden folder: `MK5/.keystore/`.
 Choose in **Advanced/Tools > Key Storage** (1 = internal flash, 2 = SD card);
 moving deletes the old copy. `hal/common/cp_keystore.py`.
 
@@ -232,8 +219,7 @@ moving deletes the old copy. `hal/common/cp_keystore.py`.
   RAM, so you can fetch a PSBT on the PC and still sign.
 - **Reinstalling the firmware**: a blank device that finds a key folder on the
   card uses it; no restore needed.
-- COLDCARD can't see or open the key folder; **Format SD Card** keeps it
-  (Mk5), or refuses on the Q (whole-card format) while the key is there.
+- COLDCARD can't see or open the key folder; **Format SD Card** keeps it.
 - Two files written in turn with sequence number + SHA-256 (power-cut safe);
   after a good write the older copy is deleted, so a wiped seed leaves no
   stale copy (the internal flash slots now do the same).
@@ -246,8 +232,7 @@ moving deletes the old copy. `hal/common/cp_keystore.py`.
 
 - **32-bit desktop build** (`BITS=32 tools/build_host_fw.sh`, needs
   gcc-multilib): objects are the same size as on the ESP32, so heap numbers
-  mean the same thing. The whole test suite passes with a 224 KB heap (both
-  editions); seed import needs about 210 KB. The device image leaves about
+  mean the same thing. The whole test suite passes with a 224 KB heap; seed import needs about 210 KB. The device image leaves about
   266 KB of RAM for everything after its static data; the self-test now ends
   with the device's real numbers ("Memory: N KB free now, lowest M KB since
   power-on").
@@ -258,27 +243,20 @@ moving deletes the old copy. `hal/common/cp_keystore.py`.
   hangs.
 
 Found and fixed this way:
-- Keypad edition: the letter-entry screen (passphrase "Edit Phrase", wallet
-  nicknames) crashed: COLDCARD uses `bytearray(str)`, which MicroPython 1.29
-  rejects. `tools/patch_micropython.py` restores the old behaviour.
-- QWERTY edition: pressing the QR key in a text field froze the device
-  (COLDCARD retries the missing camera forever). Now explains "no scanner".
+- The letter-entry screen (passphrase "Edit Phrase", wallet nicknames)
+  crashed: COLDCARD uses `bytearray(str)`, which MicroPython 1.29 rejects.
+  `tools/patch_micropython.py` restores the old behaviour.
 - Memory: every signing started another secret-cache expiry timer (~400 bytes
   each, freed only after a minute idle); one timer now. libngu's seed-word
   lookup copied 8 KB per word; now walks the list in place. The Virtual Disk
   image was zero-filled with a 32 KB buffer; now 4 KB.
-- QWERTY edition: Debug Functions > BBQr Demo crashed (needs the Q's GPU
-  firmware as sample data); now has its own sample data.
-- Both editions: NFC features (NFC Push Tx etc.) tried to start an NFC chip
+- NFC features (NFC Push Tx etc.) tried to start an NFC chip
   that isn't there and crashed; now they say "no NFC". Screen fills use a
   fixed buffer instead of the Python heap.
 
-Results (32-bit desktop build, 10 runs x 600 random keys each):
-- **Keypad edition**: clean at a 256 KB heap, about 26-30 KB to spare.
-- **QWERTY edition**: clean at 320 KB; at 256 KB some heavier screens run out
-  of memory (it uses about 240-250 KB). It has not been tried on a Cardputer
-  yet: check the self-test's memory line first, and treat it as
-  experimental until it's been used on the device.
+Results (32-bit desktop build, 10 runs x 600 random keys each): clean at a
+256 KB heap, about 26-30 KB to spare. On the device: 227 KB free, lowest
+69 KB since power-on, after signing.
 
 ## Virtual Disk (USB drive) on the SD card
 
@@ -287,14 +265,13 @@ Cardputer shows up on the computer as a 4MB USB drive; drop a PSBT on it, the
 Cardputer offers to sign it ("Enable & Auto") or you pick it from Ready To
 Sign, and the signed files appear on the drive.
 
-- The 4MB lives in a disk-image file on the card: `MK5/.vdisk/vdisk.img`
-  (Q: `.vdisk/vdisk.img`), made (zero-filled, formatted) the first time
+- The 4MB lives in a disk-image file on the card: `MK5/.vdisk/vdisk.img`,
+  made (zero-filled, formatted) the first time
   Virtual Disk is switched on with a card in. The computer sees only what's
   inside the image, never the rest of the card or the key folder.
 - Contents are kept across power-offs (a real Mk5's RAM disk is wiped).
   Clear it from the computer, or with **Format RAM Disk**.
-- COLDCARD can't see the `.vdisk` folder; Format SD Card keeps it (Mk5) or
-  refuses while Virtual Disk is on (Q).
+- COLDCARD can't see the `.vdisk` folder; Format SD Card keeps it.
 - One shared mount of the card (`cp_sdsub.share_acquire`) serves COLDCARD's
   /sd, the key store and the disk image, so the card stays mounted while
   Virtual Disk is on (two FAT drivers on one card would corrupt it).
@@ -310,12 +287,12 @@ Sign, and the signed files appear on the drive.
 ## Self-test and the USB light
 
 **Advanced/Tools > Danger Zone > Perform Selftest** checks this hardware:
-screen (All on / All off on the Mk5, red/green/blue on the Q), keys,
+screen (All on / All off), keys,
 **USB light** (the StampS3A's RGB LED on GPIO 21 lights white), **Mic test**
 (passes when it hears a sound clearly louder than the room: clap or speak),
 **Gyro test** (passes when the Cardputer is turned faster than 40°/s), then
 the SD card write/read. Left out because the parts don't exist here: PSRAM,
-the genuine green/red light, the SD activity light, NFC, GPU, factory
+the genuine green/red light, the SD activity light, NFC, factory
 battery test. Press any key during the mic/gyro tests to abort.
 
 With USB switched on (Settings > Hardware On/Off > USB Port), the RGB LED is
@@ -354,19 +331,6 @@ To change other behaviour, edit `tools/assemble.py` (patches applied to
 COLDCARD's code) or add a module to `hal/common/` (replaces COLDCARD's module
 of the same name).
 
-## Keyboard
-
-| COLDCARD key | Cardputer |
-|---|---|
-| Cancel / Esc | `Fn` + `` ` `` , or `Alt` |
-| Enter / OK | `Enter` |
-| Arrows | `Fn` + `;` `.` `,` `/` (up, down, left, right) |
-| Page up / down | `Fn`+`Shift` + `;` / `.` |
-| Home / End | `Fn`+`Shift` + `,` / `/` |
-| Delete / clear field | `Bksp` / `Shift`+`Bksp` |
-| F1 to F6 | `Fn` + `1` to `6` |
-| Caps lock | `Ctrl` + `Shift` |
-
 ## Building
 
 Simplest: `tools/build_release.sh latest-mk5` (or the GitHub workflow or the
@@ -376,8 +340,8 @@ Docker image), see [BUILDING.md](BUILDING.md). By hand:
 tools/setup.sh [workdir] [coldcard-ref]   # COLDCARD (default: tested commit) + MicroPython 1.29
 # install ESP-IDF v5.5.4 for esp32s3 (see setup.sh header), then:
 . ~/esp-idf/export.sh
-tools/build_device.sh              # -> build/device/firmware.bin
-esptool.py --chip esp32s3 --port /dev/ttyACM0 write_flash -z 0 build/device/firmware.bin
+tools/build_device.sh              # -> build/device-mk4/firmware.bin
+esptool.py --chip esp32s3 --port /dev/ttyACM0 write_flash -z 0 build/device-mk4/firmware.bin
 ```
 
 Flashing erases nothing outside the image. To start completely fresh:
@@ -386,32 +350,29 @@ Flashing erases nothing outside the image. To start completely fresh:
 ### Desktop test build (no hardware needed)
 
 ```bash
-tools/build_host_fw.sh             # Linux; -> build/host/cc-mpy
+tools/build_host_fw.sh             # Linux; -> build/host-mk4/cc-mpy
 pip install embit                  # independent PSBT checker
-tests/run_flows.sh 320k            # blank device -> PIN -> seed -> sign -> verify
+tests/run_flows.sh 320k            # PIN, seed, sign, duress PIN, backup, Virtual Disk, ...
 ```
 
-`tests/flows/*.txt` (Q) and `tests/flows-mk4/*.txt` (Mk4/Mk5) are key-press
+`tests/flows-mk4/*.txt` are key-press
 scripts (`type`, `key ENTER`, `pick <menu item>`, `words <seed words>`,
 `expect ...`, `shot name`, `mem`). Screenshots are written as PNGs.
 
 ## How it's put together
 
 ```
-hal/common/   Cardputer replacements used by both variants
+hal/common/   Cardputer replacements for COLDCARD modules
   ckcc.py         bootrom "callgate" (was C + STM32 bootloader)
   secel_soft.py   emulated SE1 + SE2: PIN, seed, trick PINs (encrypted, persistent)
-  keyboard.py     TCA8418 key events -> COLDCARD Q key codes
-  cp_keys.py      Cardputer key matrix layout (shared by keyboard.py, mempad.py)
-  psram.py        Q's 4MB PSRAM -> 1MB flash partition (PSBT staging)
+  cp_keystore.py  where that record lives: internal flash or the SD card
+  cp_vdisk.py     Virtual Disk image on the SD card
+  cp_keys.py      Cardputer key matrix layout (used by mempad.py)
+  psram.py        PSRAM -> flash partition (PSBT staging)
   cp_entropy.py   SE1/SE2 random bytes: chip RNG + microphone / motion sensor
   features.py     the feature switches above
-hal/q1/       Q variant only
-  st7788.py gpu.py  display driver bridge; software cursor (Q has a GPU chip for this)
-  version.py      hardware description (Q1 features minus scanner/NFC)
-  font_iosevka.py COLDCARD's font re-rendered at 7x12 (tools/render_font.py)
-hal/mk4/      Mk4/Mk5 variant only: ssd1306.py, mempad.py, version.py
-hal/device/   ESP32 board layer: ST7789, TCA8418, SD, partitions, boot, USB,
+hal/mk4/      Mk4/Mk5 screen and keypad: ssd1306.py, mempad.py, version.py
+hal/device/   ESP32 board layer: ST7789, TCA8418, SD, partitions, boot, USB (HID + drive),
               cp_sensors.py (ES8311 mic + BMI270 drivers)
 hal/host/     desktop test board layer: fake screen, file-backed flash/SD
 cmodules/     C: libngu (crypto, patched for MicroPython 1.29), uqr (QR),
@@ -425,18 +386,16 @@ Flash layout: 3MB firmware · 32KB SE state (two copies, power-cut safe) ·
 
 ## Not done yet / known gaps
 
-- **Entropy sensors on hardware**: drivers are tested against fakes only; check
-  Advanced/Tools > Entropy Sources on the device (a sensor that doesn't work
-  is skipped, so nothing else is affected).
-- **USB extras**: HSM mode, Virtual Disk (USB drive) and keyboard emulation
-  are not ported. The normal USB link to wallet software works (see "USB").
+- **Virtual Disk on hardware**: passes all desktop tests; not yet confirmed
+  with a computer on a real Cardputer.
+- **USB extras**: HSM mode and keyboard emulation are not ported. The normal
+  USB link to wallet software works (see "USB").
 - **Battery level**: not read yet (the ADC conflicts with the entropy source).
   Shows as external power. Idle-on-battery timeout is therefore inactive.
 - **QR camera features** (scan to import, Key Teleport by QR): no camera. Most
   have microSD alternatives in COLDCARD's menus.
 - **NFC**: off. The M5Stack NFC Cap could be supported later.
-- **Very large QR codes** (BBQr animations of big PSBTs) may not fit the 135 px tall screen.
-- Text cursor doesn't blink (the Q uses a separate graphics chip for that).
+- **Very large QR codes** may not fit the screen.
 
 ## License
 

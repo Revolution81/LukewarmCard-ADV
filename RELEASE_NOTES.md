@@ -46,6 +46,3 @@ Runs Coinkite's COLDCARD Mk4/Mk5 firmware **5.6.3**, essentially unmodified.
 - **Not for sale:** MIT + Commons Clause, same as COLDCARD. Free to use,
   change and share; never charge for it or for devices with it installed.
 - Before installing over an existing wallet: Advanced/Tools > Backup.
-
-The QWERTY edition (COLDCARD Q firmware) builds and passes the desktop tests
-but hasn't been tried on a Cardputer yet; it will follow later.

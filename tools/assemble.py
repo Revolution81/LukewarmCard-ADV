@@ -11,17 +11,14 @@
 #   6. write cp_buildinfo.py and a frozen-module manifest
 #
 # Usage: assemble.py <coldcard-repo> <out-dir> <target: device|host> [--dev]
-#                    [--variant q1|mk4] [--layout own|launcher]
+#                    [--layout own|launcher]
 #
 # Layouts (device only): own = the port's partition table (ccse, ccscratch,
 # vfs); launcher = everything in one 'vfs' partition, for M5Launcher.
 #
-# Variants (same COLDCARD commit, the two firmware lines Coinkite ships):
-#   q1   COLDCARD Q code path (QWERTY + colour LCD UI). Default.
-#   mk4  COLDCARD Mk4/Mk5 code path (numeric keypad + 128x64 OLED UI). The
-#        Q-only modules listed in COLDCARD's manifest_q1.py are left out,
-#        exactly as Coinkite's Mk4/Mk5 build does; Patches and appends that
-#        target those modules are skipped automatically.
+# Builds the COLDCARD Mk4/Mk5 code path (numeric keypad + 128x64 OLED UI),
+# the Keypad edition. The Q-only modules listed in COLDCARD's manifest_q1.py
+# are left out, exactly as Coinkite's Mk4/Mk5 build does.
 #
 import os, sys, shutil, subprocess, datetime, glob
 
@@ -63,18 +60,6 @@ PATCHES = [
     # View TRNG Words: say where this device's random bytes come from
     ('seed.py', '256-bit device seed (STM32 TRNG + SE1 + SE2) ',
                 '256-bit device seed (ESP32 TRNG + microphone + gyro) '),
-    # ---- screen geometry: Q1 320x240 -> Cardputer 240x135, 7x12 font cells
-    ('lcd_display.py', 'LEFT_MARGIN = const(7)', 'LEFT_MARGIN = const(0)'),
-    ('lcd_display.py', 'TOP_MARGIN = const(15)', 'TOP_MARGIN = const(13)'),
-    ('lcd_display.py', 'PROGRESS_BAR_H = const(5)', 'PROGRESS_BAR_H = const(2)'),
-    ('lcd_display.py', 'ACTIVE_H = const(240 - TOP_MARGIN - PROGRESS_BAR_H)',
-                       'ACTIVE_H = const(135 - TOP_MARGIN - PROGRESS_BAR_H)'),
-    ('lcd_display.py', '    WIDTH = 320\n    HEIGHT = 240', '    WIDTH = 240\n    HEIGHT = 135'),
-    ('lcd_display.py', 'WIDTH = const(320)\nHEIGHT = const(240)', 'WIDTH = const(240)\nHEIGHT = const(135)'),
-    ('lcd_display.py', '        bw = 5      # bar width', '        bw = 2      # bar width'),
-    ('lcd_display.py', '        x = 85\n        y = 30\n        w = 150',
-                       '        x = 60\n        y = 13\n        w = 120'),
-
     # ---- trick PINs: hide options disabled in features.py
     ('trick_pins.py', 'from menu import MenuSystem, MenuItem\n',
      'from menu import MenuSystem as _CC_MenuSystem, MenuItem\n'
@@ -114,12 +99,6 @@ PATCHES = [
     ('main.py', '            await pa.enforce_brick()\n',
                 '            import cp_keystore\n            await cp_keystore.boot_check()\n'
                 '            await pa.enforce_brick()\n'),
-
-    # ---- battery: Q1 pin sensing -> Cardputer ADC via cp_board
-    ('battery.py', "rev_d_later = not Pin('REV_D', mode=Pin.IN, pull=Pin.PULL_UP).value()\n"
-                   "nbat_pin = Pin('NOT_BATTERY_OLD' if not rev_d_later else 'NOT_BATTERY',\n"
-                   "                            mode=Pin.IN, pull=Pin.PULL_UP)",
-                   "rev_d_later = False      # Cardputer: no battery-sense pin\nnbat_pin = None"),
 ]
 
 # Mk4/Mk5 variant only. COLDCARD's display.py opens the OLED's STM32 SPI bus;
@@ -248,22 +227,6 @@ async def feature_requires_nfc():
         return False
     return await _cp_orig_feature_requires_nfc()
 
-_cp_orig_wipe_sd_card = wipe_sd_card
-async def wipe_sd_card(*A):
-    # Q (whole-card format): don't let "Format SD Card" erase the key
-    import cp_keystore, features
-    if not getattr(features, 'SD_SUBDIR', None):
-        if cp_keystore.location() == 'sd':
-            await ux_show_story('Your key is stored on this SD card, and formatting would erase it. '
-                                'Move it first: Advanced/Tools > Key Storage.', title='Key on Card')
-            return
-        import glob
-        if glob.VD:
-            await ux_show_story('The Virtual Disk is stored on this SD card. Turn Virtual Disk off '
-                                'first: Settings > Hardware On/Off > Virtual Disk.', title='Card in Use')
-            return
-    return await _cp_orig_wipe_sd_card(*A)
-
 async def cp_entropy_sources(*a):
     # Advanced/Tools > Entropy Sources: what goes into new seeds on this device
     import cp_entropy
@@ -276,7 +239,7 @@ async def cp_entropy_sources(*a):
         rows = cp_entropy.status()
         err = str(exc)
     import version
-    msg = 'LukewarmCard ADV, %s edition\\n\\n' % ('QWERTY' if version.has_qwerty else 'Keypad')
+    msg = 'LukewarmCard ADV, Keypad edition\\n\\n'
     for label, ok, detail in rows:
         mark = 'used' if ok else ('NOT USED' if ok is False else 'n/a')
         msg += '%s: %s\\n  %s\\n\\n' % (label, mark, detail)
@@ -369,15 +332,8 @@ async def test_motion():
 async def start_selftest():
     try:
         # (no battery test: it needs factory reference cells)
-        if not version.has_qwerty:
-            await test_oled()
-        else:
-            await test_lcd()        # (no GPU test: the Q's GPU chip isn't here)
-
-        if version.has_qwerty:
-            await test_keyboard()
-        else:
-            await test_numpad()
+        await test_oled()
+        await test_numpad()
 
         await test_usb_light()
         await test_mic()
@@ -404,28 +360,6 @@ def _cp_arm(cls=SensitiveValues):
         cls._cp_timer = True
         call_later_ms(CACHE_CHECK_RATE, cls.cache_check)
 SensitiveValues._cp_arm = staticmethod(_cp_arm)
-''',
-
-    'ux_q1.py': '''
-# ---- Cardputer port: no QR scanner camera ----
-# COLDCARD's scan loops retry forever when the scanner is missing (a Q always
-# has one), freezing the device if the QR key is pressed. Say so instead, and
-# return None, which every caller already treats as "cancelled".
-_cp_orig_scan = QRScannerInteraction.scan
-async def _cp_scan(prompt, line2=None, enter_quits=False):
-    from glob import SCAN
-    if not SCAN:
-        # never raise from here: COLDCARD's scan loops catch every error and
-        # retry without pausing (e.g. a MemoryError would freeze the device)
-        try:
-            from ux import ux_show_story
-            await ux_show_story("This device has no QR code scanner. Type the data in, "
-                                "or load it from the SD card or over USB instead.", title='No Scanner')
-        except Exception:
-            pass
-        return None
-    return await _cp_orig_scan(prompt, line2=line2, enter_quits=enter_quits)
-QRScannerInteraction.scan = staticmethod(_cp_scan)
 ''',
 
     'vdisk.py': '''
@@ -475,103 +409,6 @@ def make_psram_fs():
     import cp_vdisk
     cp_vdisk.DISK.write_ident()
 ''',
-
-    'battery.py': '''
-# ---- Cardputer ----
-def get_batt_level():
-    import cp_board
-    return cp_board.batt_volts()
-''',
-
-    'q1.py': '''
-# ---- Cardputer ----
-def init0():
-    # Q1 init without the QR scanner; battery via cp_board
-    import lcd_display as display
-    sys.modules['display'] = display
-    from mk4 import init0 as mk4_init0
-    mk4_init0()
-    glob.SCAN = None
-    try:
-        import battery
-        battery.setup_battery()
-    except Exception as exc:
-        print("battery: %r" % exc)
-''',
-
-    'lcd_display.py': '''
-# ---- Cardputer: status bar, splash and image clipping for 240x135 ----
-
-def _cp_status_text(dis, x, msg, on=True, dark=False):
-    # draw a short string into the status bar, in pixels
-    pal = TEXT_PALETTES[2 if dark else 0]
-    for ch in msg:
-        fn = FontIosevka.lookup(ch)
-        if fn:
-            if on:
-                dis.show_pal_pixels(x, 0, fn.w, fn.h, pal, fn.bits)
-            else:
-                dis.fill_rect(x, 0, fn.w, fn.h, 0)
-            x += fn.w
-        else:
-            x += CELL_W
-    return x
-
-_CP_STATUS = {
-    # key: (x position in pixels, text)
-    'shift':   (0,   'SHFT'),
-    'symbol':  (31,  'Fn'),
-    'caps':    (48,  'CAPS'),
-    'bip39':   (82,  'PW'),
-    'tmp':     (100, 'TMP'),
-    'devmode': (128, 'DEV'),
-    'edge':    (128, 'EDGE'),
-}
-
-def _cp_draw_status(self, full=False, **kws):
-    if full:
-        self.dis.fill_rect(0, 0, WIDTH, TOP_MARGIN-1, 0x0)
-        self.dis.fill_rect(0, TOP_MARGIN-1, WIDTH, 1, grey_level(0.25))
-        kws = get_sys_status()
-
-    for key, (x, label) in _CP_STATUS.items():
-        if key in kws:
-            _cp_status_text(self.dis, x, label, on=bool(kws[key]))
-
-    xfp = kws.get('xfp', None)
-    if xfp is not None:
-        _cp_status_text(self.dis, WIDTH - 8*CELL_W, xfp2str(xfp), dark=True)
-
-    if 'bat' in kws:
-        self.set_lcd_brightness(kws['bat'] is not None)
-
-def _cp_splash(self):
-    self.real_clear()
-    self.text(None, 1, "COLDCARD")
-    self.text(None, 2, "for Cardputer ADV", dark=True)
-    self.text(None, 4, "Don't Trust. Verify.")
-    self.text(None, 6, "No secure element:", dark=True)
-    self.text(None, 7, "use a BIP-39 passphrase.", dark=True)
-    from version import get_mpy_version
-    timestamp, label, *_ = get_mpy_version()
-    self.text(0,  -1, label)
-    self.text(-1, -1, timestamp)
-    self.show()
-
-_cp_orig_image = Display.image
-def _cp_image(self, x, y, name):
-    # skip Q1 artwork that can't fit on this screen
-    w, h, _ = getattr(Graphics, name)
-    if w > WIDTH or (y or 0) + h > HEIGHT:
-        return
-    if x is not None and x + w > WIDTH:
-        x = WIDTH - w
-    _cp_orig_image(self, x, y, name)
-
-Display.draw_status = _cp_draw_status
-Display.splash = _cp_splash
-Display.image = _cp_image
-''',
 }
 
 
@@ -593,7 +430,7 @@ def release_version(cc, history, fallback):
     # the version Coinkite's own build stamps in (stm32/*Makefile VERSION_STRING);
     # older trees: newest entry in the release history
     import re
-    mk = ['Q1-Makefile'] if history == 'History-Q.md' else ['MK-Makefile', 'MK4-Makefile']
+    mk = ['MK-Makefile', 'MK4-Makefile']
     for m in mk:
         try:
             v = re.search(r'^VERSION_STRING\s*=\s*(\S+)', open(os.path.join(cc, 'stm32', m)).read(), re.M)
@@ -623,11 +460,9 @@ def apply_patches(out, patches):
 def main():
     cc, out, target = sys.argv[1], sys.argv[2], sys.argv[3]
     is_dev = '--dev' in sys.argv
-    variant = 'q1'
-    if '--variant' in sys.argv:
-        variant = sys.argv[sys.argv.index('--variant') + 1]
-    if variant not in ('q1', 'mk4'):
-        die('unknown variant %r (q1 or mk4)' % variant)
+    variant = 'mk4'
+    if '--variant' in sys.argv and sys.argv[sys.argv.index('--variant') + 1] != 'mk4':
+        die('this kit builds the Keypad edition only (--variant mk4)')
     layout = 'own'
     if '--layout' in sys.argv:
         layout = sys.argv[sys.argv.index('--layout') + 1]
@@ -635,9 +470,7 @@ def main():
         die('unknown layout %r (own or launcher)' % layout)
     shared = os.path.join(cc, 'shared')
 
-    exclude = set(EXCLUDE)
-    if variant == 'mk4':
-        exclude |= q1_only_modules(cc)
+    exclude = set(EXCLUDE) | q1_only_modules(cc)
 
     if os.path.exists(out):
         shutil.rmtree(out)
@@ -678,20 +511,12 @@ def main():
         die('expected COLDCARD uhashlib imports, found %d' % n_hash)
 
     # 2. patches (those for modules this variant leaves out are skipped)
-    apply_patches(out, [pt for pt in PATCHES if pt[0] not in exclude])
-    if variant == 'mk4':
-        apply_patches(out, MK4_PATCHES)
+    apply_patches(out, PATCHES + MK4_PATCHES)
 
     # 3. appends
-    for fn, code in APPENDS.items():
-        if fn in exclude:
-            continue
+    for fn, code in list(APPENDS.items()) + list(MK4_APPENDS.items()):
         with open(os.path.join(out, fn), 'a') as fp:
             fp.write('\n' + code)
-    if variant == 'mk4':
-        for fn, code in MK4_APPENDS.items():
-            with open(os.path.join(out, fn), 'a') as fp:
-                fp.write('\n' + code)
 
     # 5. overlays
     for sub in ('common', variant, target):
@@ -703,10 +528,7 @@ def main():
         rev = subprocess.check_output(['git', '-C', cc, 'log', '-1', '--format=%h'], text=True).strip()
     except Exception:
         rev = 'unknown'
-    if variant == 'mk4':
-        cc_ver = release_version(cc, 'History-Mk4.md', 'Mk4?')
-    else:
-        cc_ver = release_version(cc, 'History-Q.md', 'Q?')
+    cc_ver = release_version(cc, 'History-Mk4.md', 'Mk4?')
     now = datetime.datetime.now(datetime.timezone.utc)
     with open(os.path.join(out, 'cp_buildinfo.py'), 'w') as fp:
         fp.write('# generated by assemble.py\n')

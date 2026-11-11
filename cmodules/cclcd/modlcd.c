@@ -55,7 +55,7 @@ static void dev_write_repeated(mp_obj_t dev, int count, const uint8_t *line, siz
     }
 
     // static, not from the Python heap: filling a rectangle must not fail
-    // when the heap is nearly full (QWERTY edition: RAM is tight)
+    // when the heap is nearly full
     static uint8_t chunk[CHUNK_BYTES];
     for(int i=0; i<per; i++) memcpy(chunk + i*line_len, line, line_len);
 

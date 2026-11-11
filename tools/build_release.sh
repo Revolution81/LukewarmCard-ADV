@@ -3,19 +3,17 @@
 #
 #   tools/build_release.sh [coldcard-ref]
 #
-#   coldcard-ref:  latest-mk5 | latest-q | master | a tag | a commit   (see tools/setup.sh)
+#   coldcard-ref:  latest-mk5 | master | a tag | a commit   (see tools/setup.sh)
 #                  default: the commit this port was last tested with
 #
 # What it does:
 #   1. fetches COLDCARD at that version (tools/setup.sh)
 #   2. builds the desktop test firmware and runs the test suites, so a COLDCARD
 #      change that breaks the port is caught before you flash anything
-#   3. builds the device images (M5Launcher + full-flash, Mk5 + Q)
+#   3. builds the device images (M5Launcher + full-flash)
 #   4. puts them in dist/<coldcard version>/ with SHA256SUMS.txt
 #
 # Settings (environment):
-#   VARIANTS="mk4"             which editions: mk4 = Keypad (released),
-#                              "mk4 q1" adds the QWERTY edition (experimental)
 #   LAYOUTS="launcher own"     launcher = for M5Launcher, own = full flash at 0x0
 #   SKIP_TESTS=1               skip step 2 (not recommended for a new version)
 #   SRC=~/cardputer-cc-src     where sources are kept
@@ -27,7 +25,7 @@ set -e
 PORT=$(cd "$(dirname "$0")/.." && pwd)
 REF=${1:-${CC_REF:-}}
 SRC=${SRC:-$HOME/cardputer-cc-src}
-VARIANTS=${VARIANTS:-mk4}
+VARIANTS=mk4      # Keypad edition (COLDCARD Mk4/Mk5 firmware)
 LAYOUTS=${LAYOUTS:-launcher own}
 DIST=${DIST:-$PORT/dist}
 LOGS=$PORT/build/release-logs
@@ -54,7 +52,7 @@ say "1. COLDCARD sources (${REF:-tested commit})"
 export CC_REPO=$SRC/coldcard MPY=$SRC/micropython
 CC_COMMIT=$(git -C "$CC_REPO" log -1 --format=%h)
 
-host_bin() { [ "$1" = q1 ] && echo "$PORT/build/host/cc-mpy" || echo "$PORT/build/host-$1/cc-mpy"; }
+host_bin() { echo "$PORT/build/host-$1/cc-mpy"; }
 
 # ---- 2. desktop builds + tests
 for V in $VARIANTS; do
@@ -102,7 +100,7 @@ for V in $VARIANTS; do
         echo "   building $V / $L ..."
         VARIANT=$V LAYOUT=$L "$PORT/tools/build_device.sh" > "$LOGS/device-$V-$L.log" 2>&1 \
             || { patch_help "$LOGS/device-$V-$L.log"; die "device build $V/$L failed" "$LOGS/device-$V-$L.log"; }
-        D=$PORT/build/device; [ "$V" = q1 ] || D=$D-$V; [ "$L" = own ] || D=$D-$L
+        D=$PORT/build/device-$V; [ "$L" = own ] || D=$D-$L
         OUTS+=("$V:$L:$D")
     done
 done
@@ -118,7 +116,7 @@ say "4. images in ${OUT#$PORT/}"
 for o in "${OUTS[@]}"; do
     IFS=: read V L D <<< "$o"
     VER=$(VER_OF "$D")
-    ED=keypad; [ "$V" = q1 ] && ED=qwerty      # Keypad edition (Mk5 firmware), QWERTY edition (Q)
+    ED=keypad
     NAME=lukewarmcard-adv-$ED-$VER-$L.bin
     [ "$L" = own ] && NAME=lukewarmcard-adv-$ED-$VER-full-flash.bin
     cp "$D/firmware.bin" "$OUT/$NAME"
@@ -130,8 +128,7 @@ cat > "$OUT/BUILDINFO.txt" <<EOF
 LukewarmCard ADV - unofficial port of COLDCARD firmware to the M5Stack
 Cardputer ADV. Not affiliated with or endorsed by Coinkite. See NOTICE.md.
 
-  *-keypad-*   Keypad edition: runs COLDCARD Mk4/Mk5 firmware
-  *-qwerty-*   QWERTY edition (if built): runs COLDCARD Q firmware, experimental
+Keypad edition: runs COLDCARD Mk4/Mk5 firmware.
 
 COLDCARD source:  $(grep '^Setup done' "$LOGS/setup.log" | sed 's/Setup done: COLDCARD //')
 MicroPython:      v1.29.0

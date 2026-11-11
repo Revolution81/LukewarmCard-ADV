@@ -144,7 +144,6 @@ try:
         except OSError:
             hidden = True
         check('key folder can\'t be opened', hidden)
-    # (Q uses the whole card: the folder is there, COLDCARD's file lists skip folders)
     with open('/sd/test.psbt', 'wb') as f:
         f.write(b'psbt')
 finally:

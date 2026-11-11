@@ -89,8 +89,7 @@ async def _press(ch):
 async def _pick(label):
     import cp_buildinfo
     from ux import the_ux
-    mk4 = getattr(cp_buildinfo, 'VARIANT', 'q1') == 'mk4'
-    down, up, ok = ('8', '5', 'y') if mk4 else ('\x0a', '\x0b', '\r')
+    down, up, ok = '8', '5', 'y'
     m = the_ux.top_of_stack()
     labels = [getattr(i, 'label', None) for i in getattr(m, 'items', [])]
     if label not in labels:
@@ -189,10 +188,9 @@ async def run_script(path):
     import cp_board
     os.mkdir(cp_board.WORK + '/shots') if 'shots' not in os.listdir(cp_board.WORK) else None
     import cp_buildinfo
-    if getattr(cp_buildinfo, 'VARIANT', 'q1') == 'mk4':
-        # first time this task runs: asyncio has just started, only the
-        # splash has been drawn, so every UI screen gets recorded
-        _hook_mk4_display()
+    # first time this task runs: asyncio has just started, only the
+    # splash has been drawn, so every UI screen gets recorded
+    _hook_mk4_display()
     # let boot finish
     await asyncio.sleep_ms(300)
     lines = open(path).read().split('\n')

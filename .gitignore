@@ -1,5 +1,7 @@
 build/
 dist/
 cmodules/libngu-src/libs
+cmodules/libngu
+cmodules/libngu-src/ngu/cifra
 __pycache__/
 *.pyc

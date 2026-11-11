@@ -1,7 +1,7 @@
 # Build LukewarmCard ADV images on GitHub's computers.
 #
 #  - By hand: Actions tab > "Build LukewarmCard images" > Run workflow, type the
-#    COLDCARD version (latest-mk5, latest-q, master, a tag or a commit).
+#    COLDCARD version (latest-mk5, master, a tag or a commit).
 #    The images appear under that run as a downloadable "artifact".
 #  - Automatically: every Monday it looks for a new COLDCARD Mk4/Mk5 release.
 #    If there is one, it builds it, runs the tests and publishes the images
@@ -12,13 +12,8 @@ on:
   workflow_dispatch:
     inputs:
       coldcard_ref:
-        description: "COLDCARD version: latest-mk5, latest-q, master, a tag or a commit"
+        description: "COLDCARD version: latest-mk5, master, a tag or a commit"
         default: latest-mk5
-      editions:
-        description: "Which editions to build"
-        type: choice
-        options: [keypad, keypad + qwerty (experimental)]
-        default: keypad
       run_tests:
         description: "Run the tests first (recommended)"
         type: boolean
@@ -58,7 +53,6 @@ jobs:
           # turn latest-* into the actual tag, so the release is named after it
           case "$REF" in
             latest-mk5|latest-mk4) REF=$(latest '^20.*-v[0-9]+\.[0-9]+\.[0-9]+$') ;;
-            latest-q)              REF=$(latest '^20.*-v[0-9]+\.[0-9]+\.[0-9]+Q$') ;;
           esac
           BUILD=true
           if [ "${{ github.event_name }}" = schedule ] \
@@ -89,8 +83,6 @@ jobs:
         run: |
           . "$IDF_PATH/export.sh" >/dev/null
           [ "${{ inputs.run_tests }}" = false ] && export SKIP_TESTS=1
-          export VARIANTS=mk4
-          case "${{ inputs.editions }}" in *qwerty*) export VARIANTS="mk4 q1" ;; esac
           SRC=$RUNNER_TEMP/src tools/build_release.sh "${{ needs.check.outputs.ref }}"
       - uses: actions/upload-artifact@v4
         if: always()

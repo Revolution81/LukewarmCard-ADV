@@ -3,16 +3,11 @@
 #   set PIN -> import test seed -> sign a PSBT from microSD -> verify signature
 # Needs: tools/build_host_fw.sh done, python3 with embit (pip install embit).
 # Usage: tests/run_flows.sh [heapsize]     e.g. 320k (default 1m)
-#        VARIANT=mk4 tests/run_flows.sh    Mk4/Mk5 firmware (tests/flows-mk4),
-#                                          plus duress-PIN and fingerprint checks
+#        (Keypad edition: tests/flows-mk4, plus duress-PIN and fingerprint checks)
 set -e
 PORT=$(cd "$(dirname "$0")/.." && pwd)
-VARIANT=${VARIANT:-q1}
-if [ "$VARIANT" = q1 ]; then
-    M=$PORT/build/host/cc-mpy; FLOWS=$PORT/tests/flows
-else
-    M=$PORT/build/host-$VARIANT/cc-mpy; FLOWS=$PORT/tests/flows-$VARIANT
-fi
+VARIANT=mk4      # Keypad edition (COLDCARD Mk4/Mk5 firmware)
+M=$PORT/build/host-$VARIANT/cc-mpy; FLOWS=$PORT/tests/flows-$VARIANT
 LAYOUT=${LAYOUT:-own}
 [ "$LAYOUT" = own ] || M=$(dirname "$M")-$LAYOUT/cc-mpy
 [ -n "$CC_MPY" ] && M=$CC_MPY     # e.g. the 32-bit build (tools/build_host_fw.sh BITS=32)
@@ -36,7 +31,7 @@ step 01_set_pin.txt
 step 02_import_seed.txt
 
 # Mk5 firmware only uses the MK5 folder of the card (features.SD_SUBDIR)
-SDDIR=""; [ "$VARIANT" = mk4 ] && SDDIR="MK5/"
+SDDIR="MK5/"
 echo "not ours" > other.txt
 "$M" "$PORT/tools/sdtool.py" "$CP_WORK/sdcard.img" put other.txt other-app.txt >/dev/null
 python3 "$PORT/tools/make_test_psbt.py" test.psbt >/dev/null
@@ -156,11 +151,7 @@ step 14_entropy_upgrade.txt
 # Perform Selftest: Cardputer parts (USB light = RGB LED, mic, gyro, SD)
 step 15_selftest.txt
 # regressions found by the monkey test (tests/stress.sh)
-if [ "$VARIANT" = mk4 ]; then
-    step 24_passphrase.txt      # letter-entry screen; passphrase fingerprint vs embit
-else
-    step 24_no_scanner.txt      # QR key without a camera
-fi
+step 24_passphrase.txt      # letter-entry screen; passphrase fingerprint vs embit
 
 if [ "$VARIANT" = mk4 ]; then
     # Virtual Disk (4MB image on the SD card): drop a PSBT on it, sign, read back
@@ -181,7 +172,7 @@ CP_SCRIPT=$FLOWS/13_test_login.txt timeout 300 "$M" -X heapsize=$HEAP -m host_ma
 grep -q "reset requested" 13_test_login.txt.log || { tail -15 13_test_login.txt.log; echo "FAILED: Test Login Now did not restart"; exit 1; }
 grep -q "Logged out" 13_test_login.txt.log && { echo "FAILED: Test Login Now showed Logged out"; exit 1; }
 echo "   ok: Test Login Now restarts"
-if [ "$VARIANT" = mk4 ]; then step 12_main_identity.txt; else step 03_sign_psbt.txt; fi
+step 12_main_identity.txt
 echo "   ok: logged in again after the restart"
 
 echo "== secure element unit tests"

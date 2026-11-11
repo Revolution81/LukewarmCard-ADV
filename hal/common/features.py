@@ -53,12 +53,9 @@ else:
 
 # Where this firmware keeps its files on the microSD card. None = whole card.
 # A folder name = the firmware only sees and writes that folder (created on
-# first use), and "Format SD Card" empties just that folder. Lets the Q and
-# Mk5 firmwares (and Launcher) share one card.
-if getattr(cp_buildinfo, 'VARIANT', 'q1') == 'mk4':
-    SD_SUBDIR = 'MK5'
-else:
-    SD_SUBDIR = None
+# first use), and "Format SD Card" empties just that folder, so the card can
+# be shared with Launcher and other apps.
+SD_SUBDIR = 'MK5'
 
 # Where new wallets keep the encrypted seed / PIN record (cp_keystore.py):
 # 'sd' = on the microSD card (SD_SUBDIR/.keystore) when a card is inserted at
@@ -66,7 +63,7 @@ else:
 # internal flash. Either can be changed later: Advanced/Tools > Key Storage.
 KEY_STORE_DEFAULT = 'sd'
 
-# --- Mk4/Mk5 firmware variant only (tools/build_*.sh --variant mk4) ------
+# --- Mk4/Mk5 firmware --------------------------------------------------
 
 # Which COLDCARD this build reports itself as: 4 = Mk4, 5 = Mk5. They run
 # identical firmware; this only sets version.mk_num / hw_label.

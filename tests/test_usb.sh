@@ -12,17 +12,12 @@
 #
 # Needs: tools/build_host_fw.sh done; pip: hwi ckcc-protocol embit
 #        (HWI 3.x: pip install --ignore-requires-python hwi==3.2.0 on Python 3.13)
-# Usage: tests/test_usb.sh [heapsize]            Q firmware
-#        VARIANT=mk4 tests/test_usb.sh [heapsize] Mk5 firmware
+# Usage: tests/test_usb.sh [heapsize]
 set -e
 PORT=$(cd "$(dirname "$0")/.." && pwd)
-VARIANT=${VARIANT:-q1}
+VARIANT=mk4
 HEAP=${1:-320k}
-if [ "$VARIANT" = q1 ]; then
-    M=$PORT/build/host/cc-mpy; FLOWS=$PORT/tests/flows
-else
-    M=$PORT/build/host-$VARIANT/cc-mpy; FLOWS=$PORT/tests/flows-$VARIANT
-fi
+M=$PORT/build/host-$VARIANT/cc-mpy; FLOWS=$PORT/tests/flows-$VARIANT
 CC=${CC_REPO:-$HOME/cardputer-cc-src/coldcard}
 MPY=${MPY:-$HOME/cardputer-cc-src/micropython}
 SOCK=/tmp/ckcc-simulator.sock      # fixed: HWI and ckcc look here

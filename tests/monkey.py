@@ -3,7 +3,7 @@
 # build: logs in, then presses random keys for a while, wandering through the
 # menus, and reports any crash ("Yikes"), Python traceback or memory error.
 #
-#   tests/monkey.py <variant mk4|q1> <runs> <keys per run> [heapsize] [cc-mpy]
+#   tests/monkey.py mk4 <runs> <keys per run> [heapsize] [cc-mpy]
 #
 # Each run starts from a copy of a work dir that has a PIN and seed set up
 # (made once with flows 01 + 02). Seeds are fixed (run number), so a failing
@@ -15,19 +15,14 @@ variant = sys.argv[1]
 runs = int(sys.argv[2])
 nkeys = int(sys.argv[3])
 heap = sys.argv[4] if len(sys.argv) > 4 else '320k'
-mk4 = variant == 'mk4'
-M = sys.argv[5] if len(sys.argv) > 5 else os.path.join(
-    PORT, 'build', 'host-mk4' if mk4 else 'host', 'cc-mpy')
-FLOWS = os.path.join(PORT, 'tests', 'flows-mk4' if mk4 else 'flows')
+if variant != 'mk4':
+    sys.exit('this kit has the Keypad edition only (mk4)')
+M = sys.argv[5] if len(sys.argv) > 5 else os.path.join(PORT, 'build', 'host-mk4', 'cc-mpy')
+FLOWS = os.path.join(PORT, 'tests', 'flows-mk4')
 
-# keys: Mk5 keypad (5/8/7/9 are the arrows), Q keyboard (named keys + letters)
-if mk4:
-    KEYS = ['y'] * 6 + ['x'] * 4 + list('5577889') + list('0123456789')
-    LOGIN = open(os.path.join(FLOWS, '12_main_identity.txt')).read().split('pick ')[0]
-else:
-    KEYS = (['ENTER'] * 6 + ['ESC'] * 4 + ['UP', 'DOWN', 'DOWN', 'LEFT', 'RIGHT'] * 2
-            + list('abcxyz0123459') + ['SPACE', 'DEL', 'QR', 'TAB'])
-    LOGIN = ''.join(open(os.path.join(FLOWS, '15_selftest.txt')).read().split('pick ')[0])
+# keys: Mk5 keypad (5/8/7/9 are the arrows)
+KEYS = ['y'] * 6 + ['x'] * 4 + list('5577889') + list('0123456789')
+LOGIN = open(os.path.join(FLOWS, '12_main_identity.txt')).read().split('pick ')[0]
 
 # keys that only scare the test (power-off style halts are fine, but avoid
 # typing whole PIN-change sequences by chance: none needed)

@@ -8,15 +8,12 @@ transaction, talk to wallet software over USB, and more), and only then builds
 the images.
 
 You get the Keypad edition images plus checksums and licences in
-`dist/<version>/` (add the experimental QWERTY edition with
-`VARIANTS="mk4 q1"`):
+`dist/<version>/`:
 
 | File | What it is |
 |---|---|
-| `lukewarmcard-adv-keypad-<ver>-launcher.bin` | Keypad edition (COLDCARD Mk4/Mk5 firmware), install with M5Launcher |
-| `lukewarmcard-adv-keypad-<ver>-full-flash.bin` | Keypad edition, whole flash at 0x0 (replaces Launcher) |
-| `lukewarmcard-adv-qwerty-<ver>-launcher.bin` | QWERTY edition (COLDCARD Q firmware), for M5Launcher |
-| `lukewarmcard-adv-qwerty-<ver>-full-flash.bin` | QWERTY edition, whole flash |
+| `lukewarmcard-adv-keypad-<ver>-launcher.bin` | install with M5Launcher |
+| `lukewarmcard-adv-keypad-<ver>-full-flash.bin` | whole flash at 0x0 (replaces Launcher) |
 | `SHA256SUMS.txt`, `BUILDINFO.txt` | checksums, and which COLDCARD source was used |
 | `NOTICE.md`, `LICENSE`, `*-LICENSE.txt` | licences: keep them with the images if you share them |
 
@@ -25,14 +22,12 @@ You get the Keypad edition images plus checksums and licences in
 | You type | You get |
 |---|---|
 | `latest-mk5` | the newest Mk4/Mk5 release tag (e.g. `2026-09-30T2026-v5.6.3`) |
-| `latest-q` | the newest Q release tag (e.g. `2026-09-30T2025-v1.5.3Q`) |
 | a tag name | exactly that release, from [Coinkite's tags](https://github.com/Coldcard/firmware/tags) |
 | `master` | Coinkite's newest code, including unreleased work |
 | nothing | the commit this port was last tested with |
 
-Coinkite tags the Mk and Q releases separately, but each tag contains both
-firmware lines. `latest-mk5` is the one for the Keypad edition. (If you also build the
-QWERTY edition, it uses whatever Q code is in that same tag.)
+Coinkite tags each product line's releases separately; `latest-mk5` picks
+the newest Mk4/Mk5 one, which is what this kit builds.
 
 ## Option A: on GitHub, nothing to install
 
@@ -77,9 +72,8 @@ pip install --ignore-requires-python hwi==3.2.0      # optional: the USB test
 tools/build_release.sh latest-mk5
 ```
 
-Useful settings: `VARIANTS=mk4` builds only the Keypad edition,
-`LAYOUTS=launcher` only the M5Launcher ones, `SKIP_TESTS=1` skips the tests
-(don't, for a new version).
+Useful settings: `LAYOUTS=launcher` builds only the M5Launcher image,
+`SKIP_TESTS=1` skips the tests (don't, for a new version).
 
 ## Installing a new version
 

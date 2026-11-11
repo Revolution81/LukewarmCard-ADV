@@ -7,16 +7,14 @@
 #  2. monkey test: random keypresses through the menus (tests/monkey.py),
 #     looking for crashes, tracebacks, memory errors, hangs
 #
-# Usage: VARIANT=mk4 tests/stress.sh [heap] [cc-mpy]     (leak test is Keypad edition only)
-#        VARIANT=q1  tests/stress.sh [heap] [cc-mpy]
+# Usage: tests/stress.sh [heap] [cc-mpy]
 # Best with the 32-bit build (BITS=32 tools/build_host_fw.sh): object sizes
 # match the ESP32, so the memory numbers mean the same thing.
 set -e
 PORT=$(cd "$(dirname "$0")/.." && pwd)
-VARIANT=${VARIANT:-mk4}
+VARIANT=mk4      # Keypad edition
 HEAP=${1:-320k}
-if [ "$VARIANT" = q1 ]; then DEF=$PORT/build/host/cc-mpy; FLOWS=$PORT/tests/flows
-else DEF=$PORT/build/host-$VARIANT/cc-mpy; FLOWS=$PORT/tests/flows-$VARIANT; fi
+DEF=$PORT/build/host-$VARIANT/cc-mpy; FLOWS=$PORT/tests/flows-$VARIANT
 M=${2:-$DEF}
 RUN=$(mktemp -d)
 cd "$RUN"

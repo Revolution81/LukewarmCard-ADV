@@ -6,7 +6,6 @@
 #   workdir        default ~/cardputer-cc-src
 #   coldcard-ref   what to build (default: the COLDCARD release this port was last tested with)
 #                    latest-mk5   newest Mk4/Mk5 release tag (e.g. 2026-09-30T2026-v5.6.3)
-#                    latest-q     newest Q release tag       (e.g. 2026-09-30T2025-v1.5.3Q)
 #                    master       Coinkite's newest code, released or not
 #                    any tag, branch or commit id from github.com/Coldcard/firmware
 #   (CC_REF in the environment works too)
@@ -24,7 +23,7 @@ W=${1:-$HOME/cardputer-cc-src}
 REF=${2:-${CC_REF:-}}
 mkdir -p "$W"
 
-TESTED_COMMIT=2026-09-30T2026-v5.6.3   # COLDCARD 5.6.3 release (Q code 1.5.3Q), commit 3e32e32a
+TESTED_COMMIT=2026-09-30T2026-v5.6.3   # COLDCARD 5.6.3 release, commit 3e32e32a
 MPY_TAG=v1.29.0
 CC_URL=https://github.com/Coldcard/firmware.git
 
@@ -35,14 +34,13 @@ cd "$W/coldcard"
 git fetch -q --tags origin
 
 # newest release tag for a product line. Coinkite tags look like
-# 2026-09-30T2026-v5.6.3 (Mk4/Mk5), ...-v1.5.3Q (Q), ...X (Edge, not used)
+# 2026-09-30T2026-v5.6.3 (Mk4/Mk5); other suffixes are other product lines
 latest_tag() {
     git tag -l '20*' | grep -E -- "$1" | sort | tail -1
 }
 case "$REF" in
     ''|tested)   REF=$TESTED_COMMIT ;;
     latest-mk5|latest-mk4) REF=$(latest_tag '-v[0-9]+\.[0-9]+\.[0-9]+$') ;;
-    latest-q)    REF=$(latest_tag '-v[0-9]+\.[0-9]+\.[0-9]+Q$') ;;
     master)      REF=origin/master ;;
 esac
 [ -n "$REF" ] || { echo "setup.sh: no matching COLDCARD release tag found"; exit 1; }
@@ -63,6 +61,15 @@ make -s -C "$W/micropython/mpy-cross" -j"$(nproc)" >/dev/null
 
 # the patched libngu copy in cmodules/ uses the original's crypto libraries
 ln -sfn "$W/coldcard/external/libngu/libs" "$PORT/cmodules/libngu-src/libs"
+# MicroPython's unix build looks for C modules one folder down, so it needs
+# cmodules/libngu -> libngu-src/ngu. Links are made here, not stored in git:
+# a copied folder (e.g. from a zip, or on Windows) breaks libngu's relative paths.
+if [ ! -L "$PORT/cmodules/libngu" ]; then
+    rm -rf "$PORT/cmodules/libngu"
+    ln -s libngu-src/ngu "$PORT/cmodules/libngu"
+fi
+# and libngu's own link to its SHA/AES library (cifra), same reason
+[ -L "$PORT/cmodules/libngu-src/ngu/cifra" ] || { rm -rf "$PORT/cmodules/libngu-src/ngu/cifra"; ln -s ../libs/cifra/src "$PORT/cmodules/libngu-src/ngu/cifra"; }
 
 # libngu's C code is copied into this port (cmodules/libngu-src, with small
 # changes). Say so if Coinkite changed theirs since: the build still works,

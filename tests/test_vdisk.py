@@ -111,17 +111,8 @@ check('README back (make_psram_fs)', 'README.txt' in os.listdir('/vd'))
 os.umount('/vd')
 
 print('== Format SD Card leaves the image alone')
-if features.SD_SUBDIR:
-    cp_sdsub.wipe_subdir()
-    check('image still there', os.stat(img)[6] == BLOCKS * BLOCK)
-else:
-    sd = pyb.SDCard()
-    try:
-        sd.writeblocks(0, bytes(BLOCK))
-        refused = False
-    except OSError:
-        refused = True
-    check('Q: whole-card format refused while the disk is open', refused)
+cp_sdsub.wipe_subdir()
+check('image still there', os.stat(img)[6] == BLOCKS * BLOCK)
 
 print('== Virtual Disk off')
 d.callback(None)

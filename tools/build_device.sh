@@ -6,19 +6,17 @@
 #
 #   tools/build_device.sh          # release build (mainnet default, no REPL)
 #   tools/build_device.sh --dev    # developer build (testnet default)
-#   VARIANT=mk4 tools/build_device.sh   # COLDCARD Mk4/Mk5 firmware instead of Q
-#   LAYOUT=launcher tools/build_device.sh   # image for M5Launcher (either variant)
+#   LAYOUT=launcher tools/build_device.sh   # image for M5Launcher
 #
-# Output: build/device/firmware.bin       (Q variant)
-#         build/device-mk4/firmware.bin   (Mk4/Mk5 variant)
+# Builds the Keypad edition (COLDCARD Mk4/Mk5 firmware).
+# Output: build/device-mk4/firmware.bin  (build/device-mk4-launcher/ for M5Launcher)
 # Flash at 0x0 with esptool.
 set -e
 PORT=$(cd "$(dirname "$0")/.." && pwd)
 CC=${CC_REPO:-$HOME/cardputer-cc-src/coldcard}
 MPY=${MPY:-$HOME/cardputer-cc-src/micropython}
-VARIANT=${VARIANT:-q1}
-OUT=$PORT/build/device
-[ "$VARIANT" = q1 ] || OUT=$PORT/build/device-$VARIANT
+VARIANT=mk4
+OUT=$PORT/build/device-$VARIANT
 LAYOUT=${LAYOUT:-own}
 case "$LAYOUT" in own) ;; launcher) OUT=$OUT-launcher ;; *) echo "LAYOUT must be own or launcher"; exit 1 ;; esac
 export CP_LAYOUT=$LAYOUT
@@ -28,6 +26,15 @@ mkdir -p "$OUT"
 
 command -v idf.py >/dev/null || { echo "ESP-IDF not found: run . \$IDF_PATH/export.sh"; exit 1; }
 
+# libngu links (see tools/build_host_fw.sh); the desktop build needs
+# cmodules/libngu -> libngu-src/ngu. Links are made here, not stored in git:
+# a copied folder (e.g. from a zip, or on Windows) breaks libngu's relative paths.
+if [ ! -L "$PORT/cmodules/libngu" ]; then
+    rm -rf "$PORT/cmodules/libngu"
+    ln -s libngu-src/ngu "$PORT/cmodules/libngu"
+fi
+# and libngu's own link to its SHA/AES library (cifra), same reason
+[ -L "$PORT/cmodules/libngu-src/ngu/cifra" ] || { rm -rf "$PORT/cmodules/libngu-src/ngu/cifra"; ln -s ../libs/cifra/src "$PORT/cmodules/libngu-src/ngu/cifra"; }
 python3 "$PORT/tools/patch_micropython.py" "$MPY"
 python3 "$PORT/tools/assemble.py" "$CC" "$OUT/py" device $1 --variant "$VARIANT" --layout "$LAYOUT"
 
