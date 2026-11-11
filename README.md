@@ -70,7 +70,7 @@ small, exact-match patches. Everything Cardputer-specific is in `hal/`.
 
 | | |
 |---|---|
-| Real hardware (M5Launcher image) | Boots; creates seed and wallet; Sparrow finds it over USB and **signs and sends transactions**; paper wallets and backups saved to SD:/MK5; backup / reinstall / restore; logout; self-test (LED, mic, gyro, SD); entropy sources (mic, gyro) in use. Key stored on the SD card. Passphrase entry. Memory measured: lowest 69 KB free after signing. Not yet confirmed on hardware: Virtual Disk with a computer. |
+| Real hardware (M5Launcher image) | Boots; creates seed and wallet; Sparrow finds it over USB and **signs and sends transactions**; paper wallets and backups saved to SD:/MK5; backup / reinstall / restore; logout; self-test (LED, mic, gyro, SD); entropy sources (mic, gyro) in use. Key stored on the SD card. Passphrase entry. **Virtual Disk**: shows up on the computer as a USB drive. Memory measured: lowest 69 KB free after signing. |
 | Desktop test build | Full firmware runs headless on Linux with the same code and C modules |
 | Verified on desktop | Terms → set PIN → import seed (Mk4 letter menus) → **sign PSBT from microSD**, signature checked independently with `embit` |
 | Verified on desktop | Trick PINs: BIP-85 duress PIN opens the correct wallet (fingerprint F00F1FC0 matches embit's BIP-85 index 2001); brick options can be shown or hidden |
@@ -386,8 +386,6 @@ Flash layout: 3MB firmware · 32KB SE state (two copies, power-cut safe) ·
 
 ## Not done yet / known gaps
 
-- **Virtual Disk on hardware**: passes all desktop tests; not yet confirmed
-  with a computer on a real Cardputer.
 - **USB extras**: HSM mode and keyboard emulation are not ported. The normal
   USB link to wallet software works (see "USB").
 - **Battery level**: not read yet (the ADC conflicts with the entropy source).

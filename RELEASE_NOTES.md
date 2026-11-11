@@ -30,7 +30,7 @@ Runs Coinkite's COLDCARD Mk4/Mk5 firmware **5.6.3**, essentially unmodified.
 - Encrypted key on the SD card (default when a card is in) or internal flash: Advanced/Tools > Key Storage
 - Extra randomness for new seeds from the microphone and motion sensor, mixed with the ESP32's hardware RNG: Advanced/Tools > Entropy Sources
 - Self-test for this hardware (keys, LED, mic, gyro, SD, memory)
-- Virtual Disk (a 4MB USB drive stored on the SD card): passes all desktop tests, not yet confirmed with a computer on real hardware
+- Virtual Disk: shows up on your computer as a 4MB USB drive (stored on the SD card); drop a PSBT on it and sign
 
 ## Keys
 
